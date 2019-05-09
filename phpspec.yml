@@ -1,0 +1,6 @@
+suites:
+    icuphp_suite:
+        namespace: icuphp\icuphp
+        psr4_prefix: icuphp\icuphp
+
+formatter.name: dot

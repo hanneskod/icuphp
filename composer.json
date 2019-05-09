@@ -1,0 +1,26 @@
+{
+    "name": "icuphp/icuphp",
+    "description": "The intensive care unit",
+    "homepage": "https://github.com/icuphp/icuphp",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Hannes Forsgård",
+            "email": "hannes.forsgard@fripost.org"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "icuphp\\icuphp\\": ["src/"]
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "spec\\icuphp\\icuphp\\": ["spec/"]
+        }
+    },
+    "require": {
+        "php": ">=7.1",
+        "php-units-of-measure/php-units-of-measure": "^2"
+    }
+}
