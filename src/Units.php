@@ -1,6 +1,6 @@
 <?php
 
-namespace icuphp\icuphp\Value;
+namespace icuphp\icuphp;
 
 interface Units
 {

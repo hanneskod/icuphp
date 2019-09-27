@@ -1,80 +1,67 @@
 <?php
 
-namespace icuphp\icuphp;
+declare(strict_types = 1);
 
-use icuphp\icuphp\Device\Respirator;
+namespace icuphp\icuphp;
 
 include "vendor/autoload.php";
 
-$patient = new Obj;
+use icuphp\icuphp\Feature\Constitution;
+use icuphp\icuphp\Patient\PatientInterface;
 
-// patient setup
-// TODO create some file format for simple object setups (JsonSetup)
 /*
-{
-    "LENGTH": [164, "cm"],
-    "WEIGHT": [82, "kg"],
-    ...
-    // add magical keywords like
-    "POTASSIUM": ["RandomNormalPotassium", "mmol_l"]
 
-    // or better still
-        // RandomNormalPatient that adds random normal values to ALL settings...
-}
+Analyze setup using a AnalyzingPatient
+--------------------------------------
+* Krävs att AnalyzingPatient har koll på vilket feature det är som körs.
+  Förändring a struktur?
+
+* Analyze calls med in setup()
+    - Call to get() means that property is required (remember to call lazy definitions during analysis)
+    - Call to define() or defineLazy() means that property is provided
+    - Calls to extend() provides something that is required (affected)
+
+* One use case is to make sure that all required properties are loaded at setup().
+
+* Another use case is to how a property is defined.
+    - In what feature is it defined?
+    - What properties does it depend on (and in what features)?
+    - Is it extended? Where? In what order?
+
+* setup() must only be called ONCE on each feature in Scenario.
+  Requires something like a DelegatingPatient..
+
  */
-$patient->setProperty(
-    new Property\Property(
-        Property\Properties::LENGTH,
-        new Value\ScalarValue(Value\Units::cm, 1)
-    )
+
+// Example feature implementation
+class Growth implements Feature\FeatureInterface
+{
+    use Feature\FeatureIdAsShortClassName;
+
+    private $length = 0;
+
+    public function setup(PatientInterface $patient): void
+    {
+        $patient->extend(Constitution::LENGTH, function (Value $current) {
+            return new Value($current->in(Units::cm) + $this->length, Units::cm);
+        });
+    }
+
+    public function update(int $minutesPassed): void
+    {
+        // grows a centimeter every minute!
+        $this->length += $minutesPassed;
+    }
+}
+
+$scenario = new Scenario(
+    new Constitution(
+        new Value(170, Units::cm),
+        new Value(85, Units::kg)
+    ),
+    new Growth
 );
 
-$respirator = new Respirator;
+$scenario->update(20);
 
-$icu = new ICU;
-
-$icu->connect($patient, $respirator);
-#$icu->disconnect($patient, $respirator);
-
-// possible way to manage the respirator
-#$icu->connect($respirator, new VkMMV);
-
-foreach (range(1, 20) as $a) {
-    $icu->tick(1);
-}
-
-echo $patient->getProperty(Property\Properties::LENGTH)->getValue() , "\n";
-
-
-
-
-use icuphp\icuphp\Property\PropertyInterface;
-
-// Kan vara en ball addition för att sätta upp övervakning osv..
-final class DispatchingObjectDecorator implements ObjectInterface
-{
-    private $dispatcher;
-    private $obj;
-
-    public function getProperty(string $propertyId): PropertyInterface
-    {
-        return $this->obj->getProperty($propertyId);
-    }
-
-    public function hasProperty(string $propertyId): bool
-    {
-        return $this->obj->hasProperty($propertyId);
-    }
-
-    public function setProperty(PropertyInterface $property): void
-    {
-        $this->obj->setProperty($property);
-
-        /*
-            Om det här ska vara någon ide krävs provider som kan sortera på property id och obj..
-            $provider->on($obj, $propertyId, $callback);
-         */
-
-        $this->dispatcher->dispatch(new PropertyUpdated($this->obj, $property));
-    }
-}
+echo $scenario->get(Constitution::LENGTH)->in(Units::cm), "\n";
